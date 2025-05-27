@@ -23,14 +23,26 @@ Targets 24 FPS on mid-range phones while preserving all visual flair of the 15K-
 ```
 temple_particles/
 ├── lib/
-│   ├── particle_morpher.dart    ← Main widget for TempleApp
-│   └── simplex_noise.dart       ← Noise generation algorithms
-├── assets/
-│   └── shaders/
-│       ├── particles.vert       ← Particle vertex shader
-│       ├── particles.frag       ← Particle fragment shader
-│       ├── stars.vert          ← Star vertex shader
-│       └── stars.frag          ← Star fragment shader
+│   ├── particle_morpher.dart           ← Main public API widget
+│   ├── simplex_noise.dart             ← Noise generation algorithms (part file)
+│   └── src/                           ← Internal modular architecture
+│       ├── config/
+│       │   └── particle_config.dart   ← Configuration constants
+│       ├── state/
+│       │   └── particle_state.dart    ← Provider state management  
+│       ├── geometry/
+│       │   └── shape_generator.dart   ← Shape generation algorithms
+│       ├── physics/
+│       │   └── particle_physics.dart  ← Animation and touch physics
+│       ├── rendering/
+│       │   └── particle_painter.dart  ← Custom painter for Canvas rendering
+│       ├── ui/
+│       │   └── particle_hud.dart      ← HUD and loading screen components
+│       ├── core/
+│       │   └── particle_engine.dart   ← Main engine coordinating all systems
+│       └── utils/
+│           └── simplex_noise.dart     ← Standalone noise utility
+├── example/                           ← Demo application
 ├── pubspec.yaml
 └── README.md
 ```
@@ -115,6 +127,30 @@ class ParticleMorpher extends StatelessWidget {
 - **Release**: Particles smoothly return to their formation
 - **During Morph**: Touch interrupts morphing; release resumes it
 - **Visual Feedback**: Touch indicator with ripple effects
+
+## Modular Architecture
+
+The codebase has been refactored into a clean, maintainable modular structure:
+
+### Core Modules
+
+- **`config/`**: Configuration constants and settings
+- **`state/`**: Provider-based state management for morph progress and loading
+- **`geometry/`**: Shape generation algorithms (sphere, cube, pyramid)  
+- **`physics/`**: Animation engine, touch interaction, and particle behavior
+- **`rendering/`**: Custom painter for Canvas-based particle and star rendering
+- **`ui/`**: HUD components and loading screens
+- **`core/`**: Main particle engine that coordinates all systems
+- **`utils/`**: Utility classes like SimplexNoise
+
+### Public API
+
+The main `particle_morpher.dart` provides a clean public interface while internally using the modular components. This separation allows for:
+
+- **Maintainability**: Each module has a single responsibility
+- **Testability**: Individual components can be tested in isolation  
+- **Extensibility**: New features can be added without affecting existing code
+- **Clean Dependencies**: Clear dependency hierarchy prevents circular imports
 
 ## Technical Details
 
