@@ -451,14 +451,13 @@ class _PMorpherState extends State<_PMorpher> with TickerProviderStateMixin{
       worldX * sinY + 0 * cosY,
     );
     
-    // Apply gravity-well physics
+        // Apply gravity-well physics
     for (int i = 0; i < _particles.length; i++) {
       final particle = _particles[i];
       final toTouch = touchWorld - particle;
       final distance = toTouch.length;
       
-      // Only affect particles that are far enough away to prevent clustering
-      if (distance > 30.0) {  // Larger orbital radius
+      if (distance > 0.1) {  // Apply physics to all particles except those extremely close
         // Gravity strength falls off with distance - increased strength
         final strength = 10000.0 / (distance + 10.0);
         final velocity = toTouch.normalized() * strength * dt;
@@ -469,21 +468,19 @@ class _PMorpherState extends State<_PMorpher> with TickerProviderStateMixin{
           toTouch.x,
           toTouch.z * 0.5,
         ).normalized();
-        final orbitalSpeed = 1000.0 / (distance + 10.0);
+        final orbitalSpeed = 100000.0 / (distance + 10.0);
         
-        _particles[i] = particle + velocity + (tangent * orbitalSpeed * dt);
-              } else if (distance > 10.0) {
-        // For particles that are close, only apply orbital motion to prevent clustering
-        final tangent = vm.Vector3(
-          -toTouch.y,
-          toTouch.x,
-          toTouch.z * 0.5,
-        ).normalized();
-        final orbitalSpeed = 500.0 / (distance + 5.0);
-        
-        _particles[i] = particle + (tangent * orbitalSpeed * dt);
+        // For very close particles, reduce gravity but keep orbital motion
+        if (distance < 25.0) {
+          // Close particles: reduced gravity + strong orbital motion
+          final reducedVelocity = velocity * 0.3; // Reduce gravity by 70%
+          final strongOrbital = tangent * orbitalSpeed * dt * 2.0; // Increase orbital motion
+          _particles[i] = particle + reducedVelocity + strongOrbital;
+        } else {
+          // Normal particles: full gravity + orbital motion
+          _particles[i] = particle + velocity + (tangent * orbitalSpeed * dt);
+        }
       }
-      // Particles closer than 10.0 units are not moved to prevent overcrowding
       
       // Visual feedback - increased effect intensity
       _effects[i] = math.min(1.0, 50.0 / (distance + 5.0));
