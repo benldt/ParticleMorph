@@ -229,7 +229,7 @@ class ParticleEngineState extends State<ParticleEngine> with TickerProviderState
       _particles,
       _effects,
       _shapes,
-      morphState.shape,
+      morphState.currentShape,
       _elapsed,
     );
   }
@@ -255,20 +255,14 @@ class ParticleEngineState extends State<ParticleEngine> with TickerProviderState
       _effects,
       _savedEffects,
       _shapes,
-      morphState.shape,
+      morphState.currentShape,
       _returnAnimation.value,
       _elapsed,
       _wasInMorph,
     );
     
-    if (_returnController.isCompleted) {
-      // Return animation finished
-      if (_wasInMorph) {
-        // Resume morphing from saved progress
-        _morphController.value = _savedMorphProgress;
-        _morphController.forward();
-      }
-    }
+    // Note: Return animation completion is handled in _onTouchEnd with Timer
+    // This matches the original implementation
   }
 
   /// Update particle colors
@@ -279,9 +273,10 @@ class ParticleEngineState extends State<ParticleEngine> with TickerProviderState
   /// Start morphing to next shape
   void _autoMorph() {
     final morphState = context.read<MorphState>();
-    if (morphState.busy || _touchActive) return;
+    // Prevent morphing during touch or return animation
+    if (_touchActive || _returnController.isAnimating || _morphController.isAnimating) return;
     
-    final nextShape = (morphState.shape + 1) % 3;
+    final nextShape = (morphState.currentShape + 1) % 3;
     _startMorph(nextShape);
   }
 
@@ -301,8 +296,17 @@ class ParticleEngineState extends State<ParticleEngine> with TickerProviderState
   /// Complete morphing animation
   void _finishMorph() {
     final morphState = context.read<MorphState>();
-    morphState.end();
+    
+    // Apply current breathing scale to maintain continuity
+    final scale = 1 + math.sin(_elapsed * 0.5) * 0.015;
+    _particles = _targets.map((v) => v * scale).toList();
+    
+    for (int i = 0; i < _effects.length; i++) {
+      _effects[i] = 0;
+    }
     _recolor();
+    morphState.end();
+    _morphController.reset();
   }
 
   /// Touch interaction handlers
@@ -347,8 +351,16 @@ class ParticleEngineState extends State<ParticleEngine> with TickerProviderState
       _touchActive = false;
       
       // Start return animation
-      _returnController.reset();
-      _returnController.forward();
+      _returnController.forward(from: 0);
+      
+      // Resume morph if it was interrupted - using Timer like original
+      if (_wasInMorph) {
+        Timer(const Duration(milliseconds: 50), () {
+          if (mounted && !_touchActive) {
+            _morphController.forward(from: _savedMorphProgress);
+          }
+        });
+      }
     });
   }
 
@@ -388,19 +400,11 @@ class ParticleEngineState extends State<ParticleEngine> with TickerProviderState
         // Wrap with gesture detector for touch interaction
         if (widget.enableTouchAttract) {
           mainWidget = GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onPanStart: (details) => _onTouchStart(details.localPosition),
             onPanUpdate: (details) => _onTouchUpdate(details.localPosition),
             onPanEnd: (_) => _onTouchEnd(),
             onPanCancel: () => _onTouchEnd(),
-            onTapDown: (details) => _onTouchStart(details.localPosition),
-            onTapUp: (_) => _onTouchEnd(),
-            onTapCancel: () => _onTouchEnd(),
-            child: mainWidget,
-          );
-        } else {
-          // Original tap to morph functionality
-          mainWidget = GestureDetector(
-            onTap: _autoMorph,
             child: mainWidget,
           );
         }

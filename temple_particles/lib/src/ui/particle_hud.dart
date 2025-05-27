@@ -8,80 +8,31 @@ class ParticleHUD extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MorphState>(
-      builder: (context, morphState, child) {
-        return Positioned(
-          top: 80,
-          left: 30,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Shape: ${_getShapeName(morphState.shape)}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (morphState.busy) ...[
-                  Text(
-                    'Morphing: ${(morphState.t * 100).toInt()}%',
-                    style: const TextStyle(
-                      color: Colors.blueAccent,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    width: 120,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: morphState.t,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.blueAccent,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  const Text(
-                    'Tap to morph',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          margin: const EdgeInsets.only(top: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+          decoration: BoxDecoration(
+            color: const Color(0x59191e32),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white12),
           ),
-        );
-      },
+          child: Consumer<MorphState>(builder: (_, m, __) {
+            const names = ['Sphere', 'Cube', 'Pyramid'];
+            return Text(
+              m.busy ? 'Morphing…'
+                     : 'Shape: ${names[m.currentShape]}  (auto-morphing)',
+              style: TextStyle(fontSize: 14, color: Colors.white, shadows: [
+                Shadow(color: m.busy ? const Color(0xccff9632) : const Color(0xcc0080ff),
+                       blurRadius: m.busy ? 8 : 5),
+              ]),
+            );
+          }),
+        ),
+      ),
     );
-  }
-
-  String _getShapeName(int shapeIndex) {
-    switch (shapeIndex) {
-      case 0: return 'Sphere';
-      case 1: return 'Cube';
-      case 2: return 'Pyramid';
-      default: return 'Unknown';
-    }
   }
 }
 
